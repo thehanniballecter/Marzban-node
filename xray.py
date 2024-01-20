@@ -1,3 +1,5 @@
+import os
+
 import atexit
 import json
 import re
@@ -6,7 +8,7 @@ import threading
 from collections import deque
 from contextlib import contextmanager
 
-from config import DEBUG, SSL_CERT_FILE, SSL_KEY_FILE, XRAY_API_PORT
+from config import DEBUG, SSL_CERT_FILE, SSL_KEY_FILE, XRAY_API_PORT, XRAY_EXCLUSIVE_CONFIG_PATH
 from logger import logger
 
 
@@ -105,6 +107,56 @@ class XRayConfig(dict):
         except KeyError:
             self["routing"] = {"rules": []}
             self["routing"]["rules"].insert(0, rule)
+
+            if os.path.isfile(XRAY_EXCLUSIVE_CONFIG_PATH):
+                with open(XRAY_EXCLUSIVE_CONFIG_PATH, 'r') as config_file:
+                    # Load the Exclusive Config JSON from the file
+                    exclusive_config = json.loads(config_file)
+                    # Inbounds
+                    if "inbounds" in exclusive_config:
+                        try:
+                            self["inbounds"].insert(
+                                1, exclusive_config["inbounds"])
+                        except KeyError:
+                            self["inbounds"] = []
+                            self["inbounds"].insert(
+                                0, exclusive_config["inbounds"])
+                    # Outbounds
+                    if "outbounds" in exclusive_config:
+                        try:
+                            self["outbounds"].insert(
+                                1, exclusive_config["outbounds"])
+                        except KeyError:
+                            self["outbounds"] = []
+                            self["outbounds"].insert(
+                                0, exclusive_config["outbounds"])
+                    # Routing
+                    if "routing" in exclusive_config and "rules" in exclusive_config["routing"]:
+                        try:
+                            self["routing"]["rules"].insert(
+                                0, exclusive_config["routing"]["rules"])
+                        except KeyError:
+                            self["routing"] = {"rules": []}
+                            self["routing"]["rules"].insert(
+                                0, exclusive_config["routing"]["rules"])
+                    # Reverse
+                    if "reverse" in exclusive_config:
+                        if "reverse" not in self:
+                            self["reverse"] = {"bridges": [], "portals": []}
+                        try:
+                            self["reverse"]["bridges"].insert(
+                                1, exclusive_config["reverse"]["bridges"])
+                        except KeyError:
+                            self["reverse"]["bridges"] = []
+                            self["reverse"]["bridges"].insert(
+                                0, exclusive_config["reverse"]["bridges"])
+                        try:
+                            self["reverse"]["portals"].insert(
+                                1, exclusive_config["reverse"]["portals"])
+                        except KeyError:
+                            self["reverse"]["portals"] = []
+                            self["reverse"]["portals"].insert(
+                                0, exclusive_config["reverse"]["portals"])
 
 
 class XRayCore:
