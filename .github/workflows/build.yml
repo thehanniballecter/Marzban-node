@@ -2,6 +2,8 @@ name: Build
 
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*.*.*'
 
@@ -38,7 +40,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            gozargah/marzban-node:latest
-            gozargah/marzban-node:${{github.ref_name}}
-            ghcr.io/gozargah/marzban-node:latest
-            ghcr.io/gozargah/marzban-node:${{github.ref_name}}
+            thehanniballecter/marzban-node:latest
+            thehanniballecter/marzban-node:${{github.ref_name}}
+            ghcr.io/thehanniballecter/marzban-node:latest
+            ghcr.io/thehanniballecter/marzban-node:${{github.ref_name}}
